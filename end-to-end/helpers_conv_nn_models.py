@@ -1,5 +1,4 @@
 import torch.nn as nn
-import torch.nn.CircularPad2d as CircularPad2d  # type: ignore
 from collections import OrderedDict
 
 
@@ -34,7 +33,7 @@ def compile_conv_layer(layer: dict, activation: nn.Module) -> nn.Sequential:
     # include a max_pool layer if instructed
     if max_pool_layer is not None:
         padding_size = max_pool_layer["kernel_size"] // 2
-        conv_layer["circ_pad"] = CircularPad2d((0, 0, padding_size, padding_size))  # type: ignore
+        conv_layer["circ_pad"] = nn.CircularPad2d((0, 0, padding_size, padding_size))  # type: ignore
         conv_layer["max_pool"] = nn.MaxPool2d(**max_pool_layer)  # type: ignore
     return nn.Sequential(conv_layer)  # type: ignore
 
