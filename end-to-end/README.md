@@ -1,0 +1,3 @@
+Models and analysis for end-to-end characterization of nearby objects in active electrolocation.
+
+This task aims to extract the spatial (3D location and size) and electric (resistance and capacitance) properties of a nearby object distorting the discharge field. Individual aspects of this task have been previously studied, but the whole problem poses new challenges due to interactions between object properties. Here, we aim to address those challenges with an end-to-end model based on our physics model and our data-based electroreceptor model.
