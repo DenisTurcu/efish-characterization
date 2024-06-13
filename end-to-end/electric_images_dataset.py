@@ -33,7 +33,7 @@ class ElectricImagesDataset(Dataset):
     def __getitem__(self, index):
         response = self.responses[index]  # type: ignore
         response = response / self.base_response - 1
-        response = response.reshape(self.fish_u, self.fish_t, 2).transpose(1, 0, 2)
+        response = response.reshape(self.fish_u, self.fish_t, 2).transpose(2, 1, 0).astype(np.float32)
 
         return (response, self.worms_properties[index])
 
@@ -54,6 +54,8 @@ class ElectricImagesDataset(Dataset):
                 self.worms_properties[k] - self.worms_properties_stats[k]["mean"]
             ) / self.worms_properties_stats[k]["std"]
 
-        self.worms_properties = self.worms_properties[
-            ["position_xs", "position_ys", "position_zs", "radii", "resistances", "capacitances"]
-        ].to_numpy()
+        self.worms_properties = (
+            self.worms_properties[["position_xs", "position_ys", "position_zs", "radii", "resistances", "capacitances"]]
+            .to_numpy()
+            .astype(np.float32)
+        )
