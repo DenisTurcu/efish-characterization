@@ -1,3 +1,4 @@
+import dill
 import numpy as np
 import pandas as pd
 import h5py
@@ -35,27 +36,44 @@ class ElectricImagesDataset(Dataset):
         response = (response / self.base_response - 1) * 100
         response = response.reshape(self.fish_u, self.fish_t, 2).transpose(2, 1, 0).astype(np.float32)
 
-        return (response, self.worms_properties[index])
+        return (response, self.worms_properties[index])  # type: ignore
 
     def process_worms_properties(self, dataset):
-        self.worms_properties = dataset["worms"]["dataframe"]
-        for k in self.worms_properties:
-            self.worms_properties[k] = self.worms_properties[k].apply(lambda x: dataset["worms"][k][x])
-        self.worms_properties["resistances"] = self.worms_properties["resistances"].apply(np.log10)
-        self.worms_properties["capacitances"] = self.worms_properties["capacitances"].apply(np.log10)
+        try:
+            self.worms_properties = h5py.File(
+                f"{self.data_dir_name}/torch_dataset_preprocess-worms_properties.hdf5", "r"
+            )["worms_properties"]
+            self.worms_properties_stats = dill.load(
+                open(f"{self.data_dir_name}/torch_dataset_preprocess-worms_properties_stats.pkl", "rb")
+            )
+        except FileNotFoundError:
+            worms_properties = dataset["worms"]["dataframe"]
+            for k in worms_properties:
+                worms_properties[k] = worms_properties[k].apply(lambda x: dataset["worms"][k][x])
+            worms_properties["resistances"] = worms_properties["resistances"].apply(np.log10)
+            worms_properties["capacitances"] = worms_properties["capacitances"].apply(np.log10)
 
-        self.worms_properties_stats = {}
-        for k in self.worms_properties:
-            self.worms_properties_stats[k] = {
-                "mean": self.worms_properties[k].mean(),
-                "std": self.worms_properties[k].std(),
-            }
-            self.worms_properties[k] = (
-                self.worms_properties[k] - self.worms_properties_stats[k]["mean"]
-            ) / self.worms_properties_stats[k]["std"]
+            worms_properties_stats = {}
+            for k in worms_properties:
+                worms_properties_stats[k] = {
+                    "mean": worms_properties[k].mean(),
+                    "std": worms_properties[k].std(),
+                }
+                worms_properties[k] = (
+                    worms_properties[k] - worms_properties_stats[k]["mean"]
+                ) / worms_properties_stats[k]["std"]
 
-        self.worms_properties = (
-            self.worms_properties[["position_xs", "position_ys", "position_zs", "radii", "resistances", "capacitances"]]
-            .to_numpy()
-            .astype(np.float32)
-        )
+            worms_properties = (
+                worms_properties[["position_xs", "position_ys", "position_zs", "radii", "resistances", "capacitances"]]
+                .to_numpy()
+                .astype(np.float32)
+            )
+
+            with h5py.File(f"{self.data_dir_name}/torch_dataset_preprocess-worms_properties.hdf5", "w") as f:
+                f.create_dataset("worms_properties", data=worms_properties, dtype=np.float32)
+            dill.dump(
+                worms_properties_stats,
+                open(f"{self.data_dir_name}/torch_dataset_preprocess-worms_properties_stats.pkl", "wb"),
+            )
+
+            self.process_worms_properties(dataset)
