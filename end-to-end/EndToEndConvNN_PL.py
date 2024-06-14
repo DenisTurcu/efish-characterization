@@ -14,12 +14,12 @@ class EndToEndConvNN_PL(L.LightningModule):
 
     def training_step(self, batch):
         x, y = batch
-        y_hat = self.model(x)
+        y_hat = self.model(x + torch.randn_like(x) * 0.25)  # train with noise for regularization
         loss = nn.functional.mse_loss(y_hat, y)
         self.log("train_loss", loss)
 
         # setup for logging non-scalars, such as figures
-        tensorboard = self.logger.experiment
+        tensorboard = self.logger.experiment  # type: ignore
 
         # log the first layer conv filters
         filters = self.model.sequence.conv1.conv.weight.detach().cpu().numpy()
