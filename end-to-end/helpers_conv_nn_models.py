@@ -1,3 +1,6 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 import torch.nn as nn
 from collections import OrderedDict
 
@@ -73,3 +76,36 @@ def compile_fc_layer(layer: dict, activation: nn.Module) -> nn.Sequential:
     if include_activation:
         fc_layer["fun"] = activation
     return nn.Sequential(fc_layer)
+
+
+def make_true_vs_predicted_figure(
+    true_vals: np.ndarray,
+    pred_vals: np.ndarray,
+    feature_names: list[str] = ["position_xs", "position_ys", "position_zs", "radii", "resistances", "capacitances"],
+) -> plt.Figure:  # type: ignore
+    """Create a figure comparing the true and predicted values for each feature.
+
+    Args:
+        true_vals (np.ndarray): True values.
+        pred_vals (np.ndarray): Predicted values.
+        feature_names (list[str], optional): Names of the features in the columns of the values.
+            Defaults to ["position_xs", "position_ys", "position_zs", "radii", "resistances", "capacitances"].
+
+    Returns:
+        plt.figure.Figure: Figure object containing the comparison.
+    """
+    fig, ax = plt.subplots(1, true_vals.shape[-1], figsize=(2 * true_vals.shape[-1], 2))
+    for i in range(true_vals.shape[-1]):
+        true_vs = true_vals[:, i]
+        pred_vs = pred_vals[:, i]
+        ax[i].scatter(true_vs, pred_vs, c="k", s=1, alpha=0.5, marker=".")
+        ax[i].plot([true_vs.min(), true_vs.max()], [true_vs.min(), true_vs.max()], ls="--", c="k", lw=0.5)
+        ax[i].set_xlabel("True", fontsize=8)
+        if i == 0:
+            ax[i].set_ylabel("Predicted", fontsize=8)
+        ax[i].set_title(feature_names[i], fontsize=10)
+        ax[i].tick_params(axis="both", which="major", labelsize=6)
+        ax[i].axis("equal")
+        sns.despine(ax=ax[i], offset=0, trim=True)
+    plt.tight_layout()
+    return fig
