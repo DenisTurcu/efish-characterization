@@ -32,7 +32,7 @@ class ElectricImagesDataset(Dataset):
 
     def __getitem__(self, index):
         response = self.responses[index]  # type: ignore
-        response = response / self.base_response - 1
+        response = (response / self.base_response - 1) * 100
         response = response.reshape(self.fish_u, self.fish_t, 2).transpose(2, 1, 0).astype(np.float32)
 
         return (response, self.worms_properties[index])

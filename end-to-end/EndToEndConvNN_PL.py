@@ -22,7 +22,7 @@ class EndToEndConvNN_PL(L.LightningModule):
         fig, ax = plt.subplots(filters.shape[1], filters.shape[0], figsize=(2 * filters.shape[0], 2 * filters.shape[1]))
         for i in range(filters.shape[1]):
             for j in range(filters.shape[0]):
-                ax[i, j].imshow(filters[j, i], cmap="viridis", vmin=-vval, vmax=vval)
+                ax[i, j].imshow(filters[j, i], cmap="seismic", vmin=-vval, vmax=vval)
                 ax[i, j].set_xticks([])
                 ax[i, j].set_yticks([])
                 sns.despine(ax=ax[i, j], left=True, bottom=True)
