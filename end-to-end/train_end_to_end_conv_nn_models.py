@@ -27,7 +27,7 @@ def my_parser():
     parser.add_argument(
         "--batch_size",
         type=int,
-        default=25_000,
+        default=20_000,
         help="Batch size to use for training the model.",
     )
     parser.add_argument(
@@ -39,13 +39,13 @@ def my_parser():
     parser.add_argument(
         "--max_epochs",
         type=int,
-        default=100,
+        default=1000,
         help="Maximum number of epochs to train the model.",
     )
     parser.add_argument(
         "--save_dir",
         type=str,
-        default="lightning_logs",
+        default="",
         help="Directory to save the trained model checkpoints",
     )
     parser.add_argument(
@@ -91,21 +91,11 @@ if __name__ == "__main__":
             ),
             (
                 "conv2",
-                dict(
-                    in_channels=4,
-                    out_channels=16,
-                    kernel_size=5,
-                    stride=1,
-                ),
+                dict(in_channels=4, out_channels=16, kernel_size=5, stride=1),
             ),
             (
                 "conv3",
-                dict(
-                    in_channels=16,
-                    out_channels=8,
-                    kernel_size=3,
-                    stride=1,
-                ),
+                dict(in_channels=16, out_channels=8, kernel_size=3, stride=1),
             ),
             (
                 "conv4",
@@ -133,5 +123,5 @@ if __name__ == "__main__":
     valid_loader = DataLoader(valid_dset, batch_size=args.batch_size, shuffle=False, drop_last=True, num_workers=12)
 
     logger = pl_loggers.TensorBoardLogger(save_dir=args.save_dir)
-    trainer = L.Trainer(max_epochs=args.max_epochs, devices=[args.gpu], logger=logger)
+    trainer = L.Trainer(max_epochs=args.max_epochs, logger=logger, devices=[args.gpu])
     trainer.fit(model=model_PL, train_dataloaders=train_loader, val_dataloaders=valid_loader)

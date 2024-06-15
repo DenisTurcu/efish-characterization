@@ -45,8 +45,8 @@ class EndToEndConvNN_PL(L.LightningModule):
             plt.tight_layout()
             tensorboard.add_figure("filters", fig, global_step=0, close=True)
             # log the training predictions as figure
-            true_vals = y.detach().cpu().numpy()[:200]
-            pred_vals = y_hat.detach().cpu().numpy()[:200]
+            true_vals = y[:200].detach().cpu().numpy()
+            pred_vals = y_hat[:200].detach().cpu().numpy()
             fig = make_true_vs_predicted_figure(true_vals, pred_vals)
             tensorboard.add_figure("train_predictions", fig, global_step=0, close=True)
             plt.close("all")
@@ -59,12 +59,12 @@ class EndToEndConvNN_PL(L.LightningModule):
         self.log("val_loss", val_loss)
 
         # setup for logging non-scalars, such as figures
-        if (batch_idx % 100) == 0:
+        if (batch_idx % 100) == 0 and self.global_step > 0:
             tensorboard = self.logger.experiment  # type: ignore
             # log the training predictions
             idx = np.random.permutation(y.shape[0])[:200]
-            true_vals = y.detach().cpu().numpy()[idx]
-            pred_vals = y_hat.detach().cpu().numpy()[idx]
+            true_vals = y[idx].detach().cpu().numpy()
+            pred_vals = y_hat[idx].detach().cpu().numpy()
             fig = make_true_vs_predicted_figure(true_vals, pred_vals)
             tensorboard.add_figure("valid_predictions", fig, global_step=0, close=True)
             plt.close("all")
