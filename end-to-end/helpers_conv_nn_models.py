@@ -1,4 +1,5 @@
 import numpy as np
+from sklearn.metrics import r2_score
 import matplotlib.pyplot as plt
 import seaborn as sns
 import torch.nn as nn
@@ -103,7 +104,7 @@ def make_true_vs_predicted_figure(
         ax[i].set_xlabel("True", fontsize=8)
         if i == 0:
             ax[i].set_ylabel("Predicted", fontsize=8)
-        ax[i].set_title(feature_names[i], fontsize=10)
+        ax[i].set_title(f"{feature_names[i]}\n$R^2$ = {r2_score(true_vs, pred_vs):.3f}", fontsize=10)
         ax[i].tick_params(axis="both", which="major", labelsize=6)
         ax[i].axis("equal")
         sns.despine(ax=ax[i], offset=0, trim=True)
