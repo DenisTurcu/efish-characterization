@@ -49,6 +49,22 @@ def my_parser():
         help="Directory to save the trained model checkpoints",
     )
     parser.add_argument(
+        "--predictions_type",
+        type=str,
+        default="full",
+        help="Predictions type: `full` (spatial + electric properties) or `spatial` (spatial properties only).",
+    )
+    parser.add_argument(
+        "--model_type",
+        type=str,
+        default="two_paths",
+        help=(
+            "Model type: "
+            "`regular` (typical conv nets architecture) or "
+            "`two_paths` (separate processing of MZ and DLZ channels)."
+        ),
+    )
+    parser.add_argument(
         "--input_noise_std",
         type=float,
         default=0.25,
@@ -77,6 +93,12 @@ def my_parser():
 
 if __name__ == "__main__":
     args = my_parser()
+    if args.predictions_type == "full":
+        number_outputs = 6
+    elif args.predictions_type == "spatial":
+        number_outputs = 4
+    else:
+        raise ValueError(f"Model type {args.model_type} not yet supported.")
 
     dataset = pd.read_pickle(f"{args.data_dir_name}/dataset.pkl")
     h5py_file = h5py.File(f"{args.data_dir_name}/responses.hdf5", "r")["responses"]
@@ -87,7 +109,7 @@ if __name__ == "__main__":
         [
             (
                 "conv1",
-                dict(in_channels=2, out_channels=4, kernel_size=7, stride=1, max_pool=dict(kernel_size=3, stride=1)),
+                dict(in_channels=1, out_channels=4, kernel_size=7, stride=1, max_pool=dict(kernel_size=3, stride=2)),
             ),
             (
                 "conv2",
@@ -95,21 +117,20 @@ if __name__ == "__main__":
             ),
             (
                 "conv3",
-                dict(in_channels=16, out_channels=8, kernel_size=3, stride=1),
-            ),
-            (
-                "conv4",
-                dict(in_channels=8, out_channels=4, kernel_size=3, stride=1, max_pool=dict(kernel_size=3, stride=1)),
+                dict(in_channels=16, out_channels=8, kernel_size=5, stride=1, max_pool=dict(kernel_size=3, stride=1)),
             ),
             # the fully connected layers can have dropout or flatten layers - some can miss the activation
-            ("fc1", dict(dropout=0.5, flatten=True, in_features=None, out_features=240)),
-            ("fc2", dict(dropout=0.5, in_features=240, out_features=60)),
-            ("fc3", dict(in_features=60, out_features=6, activation=False)),
+            ("fc1", dict(dropout=0.5, flatten=True, in_features=160, out_features=80)),
+            ("fc2", dict(dropout=0.5, in_features=80, out_features=40)),
+            ("fc3", dict(in_features=40, out_features=number_outputs, activation=False)),
         ]
     )
 
     model_PL = EndToEndConvNN_PL(
-        layers_properties=layers_properties, activation=args.activation, input_noise_std=args.input_noise_std
+        layers_properties=layers_properties,
+        activation=args.activation,
+        input_noise_std=args.input_noise_std,
+        model_type=args.model_type,
     )
 
     # dummy forward pass to initialize the model
@@ -118,7 +139,8 @@ if __name__ == "__main__":
     _ = model_PL.model(batch[0])
 
     # data loaders
-    train_dset, valid_dset = torch.utils.data.random_split(dset, [0.85, 0.15])  # type: ignore
+    # train_dset, valid_dset = torch.utils.data.random_split(dset, [0.85, 0.15])  # type: ignore
+    train_dset, valid_dset, _ = torch.utils.data.random_split(dset, [0.05, 0.05, 0.9])  # type: ignore
     train_loader = DataLoader(train_dset, batch_size=args.batch_size, shuffle=True, drop_last=True, num_workers=12)
     valid_loader = DataLoader(valid_dset, batch_size=args.batch_size, shuffle=False, drop_last=True, num_workers=12)
 

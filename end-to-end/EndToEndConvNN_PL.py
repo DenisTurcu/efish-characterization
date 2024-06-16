@@ -6,23 +6,58 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from helpers_conv_nn_models import make_true_vs_predicted_figure
 from EndToEndConvNN import EndToEndConvNN
+from EndToEndConvNN_TwoPaths import EndToEndConvNN2Paths
 
 
 class EndToEndConvNN_PL(L.LightningModule):
-    def __init__(self, layers_properties: dict, activation: str = "relu", input_noise_std: float = 0.5):
-        super().__init__()
+    def __init__(
+        self,
+        layers_properties: dict,
+        activation: str = "relu",
+        input_noise_std: float = 0.5,
+        model_type: str = "regular",
+    ):
+        """_summary_
+
+        Args:
+            layers_properties (dict): Dictionary containing the properties of the layers to be used in the model.
+            activation (str, optional): Activation function. Defaults to "relu".
+            input_noise_std (float, optional): Input noise std that helps regularize training. Defaults to 0.5.
+            model_type (str, optional): "regular" for typical conv layer architecture. "two_paths" for separate
+                processing of MZ and DLZ channels. Defaults to "regular".
+
+        Raises:
+            ValueError: If the activation function is not supported.
+            ValueError: If the model type is not supported.
+        """
+        super(EndToEndConvNN_PL, self).__init__()
+
         if activation.lower() == "relu":
             model_activation = nn.ReLU()  # type: ignore
         elif activation.lower() == "tanh":
             model_activation = nn.Tanh()  # type: ignore
         else:
             raise ValueError(f"Activation {activation} not yet supported.")
-        self.model = EndToEndConvNN(layers_properties=layers_properties, activation=model_activation)  # type: ignore
+
+        if model_type == "regular":
+            self.model = EndToEndConvNN(
+                layers_properties=layers_properties,  # type: ignore
+                activation=model_activation,  # type: ignore
+            )
+        elif model_type == "two_paths":
+            self.model = EndToEndConvNN2Paths(
+                layers_properties=layers_properties,  # type: ignore
+                activation=model_activation,  # type: ignore
+            )
+        else:
+            raise ValueError(f"Model type {model_type} not yet supported.")
         self.input_noise_std = input_noise_std
+        self.number_outputs = layers_properties[next(reversed(layers_properties))]["out_features"]
         self.save_hyperparameters()
 
     def training_step(self, batch, batch_idx):
         x, y = batch
+        y = y[:, : self.number_outputs]
         y_hat = self.model(x + torch.randn_like(x) * self.input_noise_std)  # train with noise for regularization
         loss = nn.functional.mse_loss(y_hat, y)
         self.log("train_loss", loss)
@@ -31,7 +66,13 @@ class EndToEndConvNN_PL(L.LightningModule):
         if (batch_idx % 100) == 0:
             tensorboard = self.logger.experiment  # type: ignore
             # log the first layer conv filters
-            filters = self.model.sequence.conv1.conv.weight.detach().cpu().numpy()  # type: ignore
+            if "sequence" in next(iter(self.model.state_dict.keys())):
+                filters = self.model.sequence.conv1.conv.weight.detach().cpu().numpy()  # type: ignore
+            else:
+                filters_MZ = self.model.conv_MZ.conv1.conv.weight.detach().cpu().numpy()  # type: ignore
+                filters_DLZ = self.model.conv_DLZ.conv1.conv.weight.detach().cpu().numpy()  # type: ignore
+                filters = np.concatenate([filters_MZ, filters_DLZ], axis=1)
+
             vval = np.max(np.abs(filters))
             fig, ax = plt.subplots(
                 filters.shape[1], filters.shape[0], figsize=(1.5 * filters.shape[0], 1.5 * filters.shape[1])
@@ -54,6 +95,7 @@ class EndToEndConvNN_PL(L.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
+        y = y[:, : self.number_outputs]
         y_hat = self.model(x)
         val_loss = nn.functional.mse_loss(y_hat, y)
         self.log("val_loss", val_loss)
