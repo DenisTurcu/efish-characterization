@@ -27,7 +27,7 @@ def my_parser():
     parser.add_argument(
         "--batch_size",
         type=int,
-        default=20_000,
+        default=35_000,
         help="Batch size to use for training the model.",
     )
     parser.add_argument(
@@ -139,8 +139,8 @@ if __name__ == "__main__":
     _ = model_PL.model(batch[0])
 
     # data loaders
-    # train_dset, valid_dset = torch.utils.data.random_split(dset, [0.85, 0.15])  # type: ignore
-    train_dset, valid_dset, _ = torch.utils.data.random_split(dset, [0.05, 0.05, 0.9])  # type: ignore
+    train_dset, valid_dset = torch.utils.data.random_split(dset, [0.85, 0.15])  # type: ignore
+    # train_dset, valid_dset, _ = torch.utils.data.random_split(dset, [0.05, 0.05, 0.9])  # type: ignore
     train_loader = DataLoader(train_dset, batch_size=args.batch_size, shuffle=True, drop_last=True, num_workers=12)
     valid_loader = DataLoader(valid_dset, batch_size=args.batch_size, shuffle=False, drop_last=True, num_workers=12)
 

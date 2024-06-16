@@ -66,7 +66,7 @@ class EndToEndConvNN_PL(L.LightningModule):
         if (batch_idx % 100) == 0:
             tensorboard = self.logger.experiment  # type: ignore
             # log the first layer conv filters
-            if "sequence" in next(iter(self.model.state_dict.keys())):
+            if "sequence" in next(iter(self.model.state_dict().keys())):
                 filters = self.model.sequence.conv1.conv.weight.detach().cpu().numpy()  # type: ignore
             else:
                 filters_MZ = self.model.conv_MZ.conv1.conv.weight.detach().cpu().numpy()  # type: ignore
