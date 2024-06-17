@@ -137,14 +137,14 @@ class Trainer:
             [
                 out_data[:, i] * self.train_data.stats_predictions[k]["std"]  # type: ignore
                 + self.train_data.stats_predictions[k]["mean"]  # type: ignore
-                for i, k in enumerate(self.train_data.wanted_predictions.keys())  # type: ignore
+                for i, k in enumerate(self.train_data.wanted_predictions)  # type: ignore
             ]
         ).T
         pred_vals = np.array(
             [
                 out_pred[:, i] * self.train_data.stats_predictions[k]["std"]  # type: ignore
                 + self.train_data.stats_predictions[k]["mean"]  # type: ignore
-                for i, k in enumerate(self.train_data.wanted_predictions.keys())  # type: ignore
+                for i, k in enumerate(self.train_data.wanted_predictions)  # type: ignore
             ]
         ).T
         fig, ax = plt.subplots(1, true_vals.shape[-1], figsize=(2 * true_vals.shape[-1], 2))
