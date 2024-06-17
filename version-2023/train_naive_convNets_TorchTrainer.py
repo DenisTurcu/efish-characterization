@@ -53,9 +53,12 @@ class Trainer:
 
     def _run_epoch(self, epoch: int, data_id: int = 0):
         start_time = time.time()
-        verbose = self.gpu_id == 0 and data_id == 0 and ((epoch + 1) % self.printing == 0 or epoch == 0)
+        verbose = self.gpu_id == 0 and ((epoch + 1) % self.printing == 0 or epoch == 0)  # and data_id == 0
         if verbose:
-            print(f"Epoch {epoch+1}. Batch:", end=" ")
+            if data_id == 0:
+                print(f"Epoch: {epoch+1}. Data ID: {data_id}. GPU: {self.gpu_id}. Batch:", end=" ")
+            else:
+                print(f"                  Data ID: {data_id}. Batch:", end=" ")
 
         self.train_loader.sampler.set_epoch(epoch)  # type: ignore
         if self.gpu_id == 0:
@@ -63,15 +66,15 @@ class Trainer:
         for i, (source, targets) in enumerate(self.train_loader):
             if self.gpu_id == 0:
                 st_time2 = time.time()
-            source = (source * (1 + torch.randn(*source.shape) * self.input_noise_amount)).to(self.gpu_id)
+            # source = (source * (1 + torch.randn(*source.shape) * self.input_noise_amount)).to(self.gpu_id)  # multiplicative noise
+            source = (source + torch.randn(*source.shape) * self.input_noise_amount).to(self.gpu_id)  # additive noise
             targets = targets.to(self.gpu_id)
             self._run_batch(source, targets, epoch, data_id)
             if self.gpu_id == 0:
                 end_time = time.time()
             if verbose:
                 print(
-                    f"GPU{self.gpu_id}: {i+1}/{len(self.train_loader)} - "
-                    f"load: {st_time2 - st_time1:.2f}s | run: {end_time - st_time2:.2f}s",  # type: ignore
+                    f"{i+1}/{len(self.train_loader)} l-{st_time2 - st_time1:.2f}s, r-{end_time - st_time2:.2f}s | ",  # type: ignore
                     end=", ",
                 )
             if self.gpu_id == 0:
@@ -85,7 +88,7 @@ class Trainer:
                 )
 
         if verbose:
-            print(f"total epoch time: {time.time() - start_time:.1f}s", end=". ")
+            print(f"total epoch time: {time.time() - start_time:.1f}s.")
 
     def _run_batch(self, source, targets, epoch: int, data_id: int = 0):
         self.optimizer.zero_grad()
@@ -227,9 +230,6 @@ class Trainer:
                         gpu_id=self.gpu_id,
                     )
                     self.init_train_loader()
-
-                if self.gpu_id == 0:
-                    print(data_id, end=", ")
 
             # save checkpoint
             if self.gpu_id == 0 and (epoch == 0 or (epoch + 1) % self.save_every == 0):

@@ -123,9 +123,9 @@ class NaiveConvNet(nn.Module):
         self.sequence = OrderedDict()
         for key, layer in layers_properties.items():
             if "conv" in key:
-                self.sequence[key] = compile_conv_layer(layer, model_activation)
+                self.sequence[key] = compile_conv_layer(copy.copy(layer), model_activation)
             elif "fc" in key:
-                self.sequence[key] = compile_fc_layer(layer, model_activation)
+                self.sequence[key] = compile_fc_layer(copy.copy(layer), model_activation)
             else:
                 raise ValueError(f'Layer type "{key}" from "layers_properties" is not compatible.')
         self.sequence = nn.Sequential(self.sequence)
@@ -220,7 +220,7 @@ class TwoPathsNaiveConvNet(nn.Module):
         self.linear = OrderedDict()
         for key, layer in layers_properties.items():
             if "fc" in key:
-                self.linear[key] = compile_fc_layer(layer, model_activation)
+                self.linear[key] = compile_fc_layer(copy.copy(layer), model_activation)
         self.linear = nn.Sequential(self.linear)
 
     def forward(self, x):
