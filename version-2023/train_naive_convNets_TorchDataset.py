@@ -37,7 +37,7 @@ class ElectricImagesDataset(Dataset):
 
     def __getitem__(self, index):
         return (
-            torch.Tensor(self.IMG_pert_EI_loaded[index,:,:,:self.receptors_grid["yy_retain"]] / self.base_stim[:,:,:self.receptors_grid["yy_retain"]]),  # type: ignore
+            torch.Tensor(self.IMG_pert_EI_loaded[index,:,:,:self.receptors_grid["yy_retain"]] / self.base_stim[:,:,:self.receptors_grid["yy_retain"]] * 100),  # type: ignore
             torch.Tensor(
                 np.stack(
                     [

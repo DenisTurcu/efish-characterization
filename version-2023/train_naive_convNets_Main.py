@@ -43,7 +43,7 @@ def my_parser():
     )
     parser.add_argument("--N_epochs", type=int, default=10_000)
     parser.add_argument("--N_data_that_fits_in_RAM", type=int, default=400_000)
-    parser.add_argument("--batch_size", type=int, default=50_000)
+    parser.add_argument("--batch_size", type=int, default=20_000)
     parser.add_argument("--input_noise_amount", type=float, default=1e-4)
     parser.add_argument("--learning_rate", type=float, default=1e-2)
     parser.add_argument("--printing", type=int, default=1)
@@ -107,7 +107,7 @@ def main(
                 (
                     "conv1",
                     dict(
-                        in_channels=1, out_channels=4, kernel_size=7, stride=1, max_pool=dict(kernel_size=3, stride=2)
+                        in_channels=1, out_channels=4, kernel_size=7, stride=1, max_pool=dict(kernel_size=3, stride=1)
                     ),
                 ),
                 (
@@ -117,12 +117,12 @@ def main(
                 (
                     "conv3",
                     dict(
-                        in_channels=16, out_channels=8, kernel_size=5, stride=1, max_pool=dict(kernel_size=3, stride=1)
+                        in_channels=16, out_channels=8, kernel_size=5, stride=1, max_pool=dict(kernel_size=3, stride=2)
                     ),
                 ),
-                ("fc1", dict(dropout=0.5, flatten=True, in_features=160, out_features=80)),
-                ("fc2", dict(dropout=0.5, in_features=80, out_features=40)),
-                ("fc3", dict(in_features=40, out_features=number_outputs, activation=False)),
+                ("fc1", dict(dropout=0.5, flatten=True, in_features=480, out_features=240)),
+                ("fc2", dict(dropout=0.5, in_features=240, out_features=120)),
+                ("fc3", dict(in_features=120, out_features=6, activation=False)),
             ]
         ),
         activation="relu",
