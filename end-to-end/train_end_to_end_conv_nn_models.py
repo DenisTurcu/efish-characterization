@@ -27,7 +27,7 @@ def my_parser():
     parser.add_argument(
         "--batch_size",
         type=int,
-        default=40_000,
+        default=20_000,
         help="Batch size to use for training the model.",
     )
     parser.add_argument(
@@ -98,6 +98,13 @@ if __name__ == "__main__":
     elif args.predictions_type == "spatial":
         number_outputs = 4
     else:
+        raise ValueError(f"Model type {args.predictions_type} not yet supported.")
+
+    if args.model_type == "regular":
+        in_ch = 2
+    elif args.model_type == "two_paths":
+        in_ch = 1
+    else:
         raise ValueError(f"Model type {args.model_type} not yet supported.")
 
     dataset = pd.read_pickle(f"{args.data_dir_name}/dataset.pkl")
@@ -109,20 +116,22 @@ if __name__ == "__main__":
         [
             (
                 "conv1",
-                dict(in_channels=1, out_channels=4, kernel_size=7, stride=1, max_pool=dict(kernel_size=3, stride=2)),
+                dict(
+                    in_channels=in_ch, out_channels=8, kernel_size=7, stride=1, max_pool=dict(kernel_size=3, stride=1)
+                ),
             ),
             (
                 "conv2",
-                dict(in_channels=4, out_channels=16, kernel_size=5, stride=1),
+                dict(in_channels=8, out_channels=16, kernel_size=5, stride=1),
             ),
             (
                 "conv3",
                 dict(in_channels=16, out_channels=8, kernel_size=5, stride=1, max_pool=dict(kernel_size=3, stride=1)),
             ),
             # the fully connected layers can have dropout or flatten layers - some can miss the activation
-            ("fc1", dict(dropout=0.5, flatten=True, in_features=160, out_features=80)),
-            ("fc2", dict(dropout=0.5, in_features=80, out_features=40)),
-            ("fc3", dict(in_features=40, out_features=number_outputs, activation=False)),
+            ("fc1", dict(dropout=0.5, flatten=True, in_features=None, out_features=240)),
+            ("fc2", dict(dropout=0.5, in_features=240, out_features=120)),
+            ("fc3", dict(in_features=120, out_features=number_outputs, activation=False)),
         ]
     )
 
