@@ -37,7 +37,11 @@ class ElectricImagesDataset(Dataset):
 
     def __getitem__(self, index):
         return (
-            torch.Tensor(self.IMG_pert_EI_loaded[index,:,:,:self.receptors_grid["yy_retain"]] / self.base_stim[:,:,:self.receptors_grid["yy_retain"]] * 100),  # type: ignore
+            torch.Tensor(
+                self.IMG_pert_EI_loaded[index, :, :, : self.receptors_grid["yy_retain"]]  # type: ignore
+                / self.base_stim[:, :, : self.receptors_grid["yy_retain"]]
+                * 100
+            ),
             torch.Tensor(
                 np.stack(
                     [
@@ -61,7 +65,9 @@ class ElectricImagesDataset(Dataset):
         self.start_rand_id = np.random.randint(self.IMG_pert_EI_shuf.shape[0] - self.max_num_samples)  # type: ignore
         self.IMG_pert_EI_loaded = self.IMG_pert_EI_shuf[  # type: ignore
             self.start_rand_id : self.start_rand_id + self.max_num_samples  # noqa: E203
-        ].astype(np.float32)  # type: ignore
+        ].astype(  # type: ignore
+            np.float32
+        )
         idx_data_loaded = self.inverse_perm_shuf[
             self.start_rand_id : self.start_rand_id + self.max_num_samples  # noqa: E203
         ]
@@ -109,16 +115,18 @@ class ElectricImagesDataset(Dataset):
         ] = load_data_full(
             file_name=file_name, use_torch=use_torch, find_base_id_for_each_EI=find_base_id_for_each_EI, verbose=verbose
         )
-        
+
         # setup the base electric image
         N_xx = self.receptors_grid["xx"]
         N_yy = self.receptors_grid["yy"]
         receptors = self.fish_objs[0].get_receptors_locations().copy()
-        receptors[receptors[:,1]<0, 2] = self.fish_objs[0].get_vertical_semi_axis() * 2.2 - receptors[receptors[:,1]<0, 2]
-        receptors = receptors[:,[0,2]]
-        receptors_order = np.lexsort((receptors[:,0], receptors[:,1]))[::-1]
-        self.base_stim = self.base_EI[0, receptors_order].reshape(N_xx, N_yy, -1).transpose(2,0,1)  # type: ignore
-        
+        receptors[receptors[:, 1] < 0, 2] = (
+            self.fish_objs[0].get_vertical_semi_axis() * 2.2 - receptors[receptors[:, 1] < 0, 2]
+        )
+        receptors = receptors[:, [0, 2]]
+        receptors_order = np.lexsort((receptors[:, 0], receptors[:, 1]))[::-1]
+        self.base_stim = self.base_EI[0, receptors_order].reshape(N_xx, N_yy, -1).transpose(2, 0, 1)  # type: ignore
+
         # load the perturbed electric images
         f = h5py.File(f"{file_name}_IMGs.hdf5", "r")
         self.IMG_pert_EI = f["pert_EI"]
@@ -132,14 +140,12 @@ class ElectricImagesDataset(Dataset):
         ####################################################################################
         if self.include_electric_properties:
             self.wanted_predictions = OrderedDict(
-                # resistances  = [100, [], np.log10(self.resistances)-4],
-                # capacitances = [100, [], -np.log10(self.capacitances)-8.5],
                 worm_xs=[1, [], np.array(self.worm_xs) * 1e3],
                 worm_ys=[1, [], np.array(self.worm_ys) * 1e3],
                 worm_zs=[1, [], np.array(self.worm_zs) * 1e3],
                 worm_radii=[1, [], np.array(self.worm_radii) * 1e3],
-                resistances=[1, [], np.log10(self.resistances)],  # type: ignore
-                capacitances=[1, [], np.log10(self.capacitances)],  # type: ignore
+                resistances=[10, [], np.log10(self.resistances)],  # type: ignore
+                capacitances=[10, [], np.log10(self.capacitances)],  # type: ignore
             )
         else:
             self.wanted_predictions = OrderedDict(

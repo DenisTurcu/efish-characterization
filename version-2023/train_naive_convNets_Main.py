@@ -16,6 +16,9 @@ from train_naive_convNets_TorchTrainer import Trainer
 sys.path.append("../../../electric_fish/ActiveZone/electrodynamic/helper_functions")
 sys.path.append("../../../electric_fish/ActiveZone/electrodynamic/objects")
 sys.path.append("../../../electric_fish/ActiveZone/electrodynamic/uniform_points_generation")
+# sys.path.append("../../efish-physics-model/helper_functions")
+# sys.path.append("../../efish-physics-model/objects")
+# sys.path.append("../../efish-physics-model/uniform_points_generation")
 
 
 def ddp_setup(rank, world_size):
@@ -45,7 +48,7 @@ def my_parser():
     parser.add_argument("--N_data_that_fits_in_RAM", type=int, default=400_000)
     parser.add_argument("--batch_size", type=int, default=20_000)
     parser.add_argument("--input_noise_amount", type=float, default=0.25)
-    parser.add_argument("--learning_rate", type=float, default=1e-2)
+    parser.add_argument("--learning_rate", type=float, default=1e-3)
     parser.add_argument("--printing", type=int, default=1)
     parser.add_argument("--num_plotting_samples", type=int, default=200)
     parser.add_argument("--save_every", type=int, default=1)
@@ -60,7 +63,10 @@ def process_model(layers_properties: OrderedDict, activation: str, fname: str = 
     if fname == "":
         dill.dump(
             dict(layers_properties=layers_properties, activation=activation),
-            open(f"./hyperparams/{datetime.datetime.strftime(datetime.datetime.now(), '%Y_%m_%d-T-%H_%M_%S')}_hyperparams.pkl", "wb"),
+            open(
+                f"./hyperparams/{datetime.datetime.strftime(datetime.datetime.now(), '%Y_%m_%d-T-%H_%M_%S')}_hyperparams.pkl",
+                "wb",
+            ),
         )
         model = TwoPathsNaiveConvNet(
             layers_properties=layers_properties,

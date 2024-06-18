@@ -8,6 +8,9 @@ import sys
 sys.path.append("../../../electric_fish/ActiveZone/electrodynamic/helper_functions")
 sys.path.append("../../../electric_fish/ActiveZone/electrodynamic/objects")
 sys.path.append("../../../electric_fish/ActiveZone/electrodynamic/uniform_points_generation")
+# sys.path.append("../../efish-physics-model/helper_functions")
+# sys.path.append("../../efish-physics-model/objects")
+# sys.path.append("../../efish-physics-model/uniform_points_generation")
 
 
 def load_data_full(file_name, use_torch=True, find_base_id_for_each_EI=True, verbose=False):

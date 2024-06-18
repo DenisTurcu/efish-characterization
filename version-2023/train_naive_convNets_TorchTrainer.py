@@ -56,9 +56,9 @@ class Trainer:
         verbose = self.gpu_id == 0 and ((epoch + 1) % self.printing == 0 or epoch == 0)  # and data_id == 0
         if verbose:
             if data_id == 0:
-                print(f"Epoch: {epoch+1}. Data ID: {data_id}. GPU: {self.gpu_id}. Batch:", end=" ")
+                print(f"Epoch: {epoch+1}. GPU: {self.gpu_id}. Data ID: {str(data_id).rjust(2)}. Batch:", end=" ")
             else:
-                print(f"                  Data ID: {data_id}. Batch:", end=" ")
+                print(f"                                      Data ID: {str(data_id).rjust(2)}. Batch:", end=" ")
 
         self.train_loader.sampler.set_epoch(epoch)  # type: ignore
         if self.gpu_id == 0:
@@ -74,8 +74,8 @@ class Trainer:
                 end_time = time.time()
             if verbose:
                 print(
-                    f"{i+1}/{len(self.train_loader)} l-{st_time2 - st_time1:.2f}s, r-{end_time - st_time2:.2f}s | ",  # type: ignore
-                    end=", ",
+                    f"{i+1}/{len(self.train_loader)} {st_time2 - st_time1:.2f} + {end_time - st_time2:.2f}s | ",  # type: ignore
+                    end="",
                 )
             if self.gpu_id == 0:
                 st_time1 = end_time
@@ -88,7 +88,7 @@ class Trainer:
                 )
 
         if verbose:
-            print(f"total epoch time: {time.time() - start_time:.1f}s.")
+            print(f"row time: {time.time() - start_time:.1f}s.")
 
     def _run_batch(self, source, targets, epoch: int, data_id: int = 0):
         self.optimizer.zero_grad()
@@ -114,7 +114,7 @@ class Trainer:
         torch.save(self.model.module.state_dict(), f"{fname}_Epoch{epoch+1}_state_dict.pt")  # type: ignore
 
         in_data, out_data = next(iter(self.train_loader))
-        idx = np.random.permutation(len(in_data))[:self.num_plotting_samples]
+        idx = np.random.permutation(len(in_data))[: self.num_plotting_samples]
         with torch.no_grad():
             out_pred = self.model(in_data).detach().cpu().numpy()[idx]
         out_data = out_data[idx].detach().cpu().numpy()
