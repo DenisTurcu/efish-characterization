@@ -71,6 +71,12 @@ def my_parser():
         help="Standard deviation of the noise to add to the input data.",
     )
     parser.add_argument(
+        "--input_noise_type",
+        type=str,
+        default="additive",
+        help="Type of noise to include to the input data: `additive` or `multiplicative`.",
+    )
+    parser.add_argument(
         "--activation",
         type=str,
         default="relu",
@@ -139,6 +145,7 @@ if __name__ == "__main__":
         layers_properties=layers_properties,
         activation=args.activation,
         input_noise_std=args.input_noise_std,
+        input_noise_type=args.input_noise_type,
         model_type=args.model_type,
     )
 

@@ -15,6 +15,7 @@ class EndToEndConvNN_PL(L.LightningModule):
         layers_properties: dict,
         activation: str = "relu",
         input_noise_std: float = 0.5,
+        input_noise_type: str = "additive",
         model_type: str = "regular",
         loss_lambda: torch.Tensor = torch.Tensor([1, 1, 1, 1, 10, 10]),
     ):
@@ -52,6 +53,8 @@ class EndToEndConvNN_PL(L.LightningModule):
             )
         else:
             raise ValueError(f"Model type {model_type} not yet supported.")
+        assert (input_noise_type == "additive") or (input_noise_type == "multiplicative"), "Noise type not supported."
+        self.input_noise_type = input_noise_type
         self.input_noise_std = input_noise_std
         self.number_outputs = layers_properties[next(reversed(layers_properties))]["out_features"]
         self.loss_lambda = loss_lambda[: self.number_outputs]
@@ -60,7 +63,11 @@ class EndToEndConvNN_PL(L.LightningModule):
     def training_step(self, batch, batch_idx):
         x, y = batch
         y = y[:, : self.number_outputs]
-        y_hat = self.model(x + torch.randn_like(x) * self.input_noise_std)  # train with noise for regularization
+        # train with noise for regularization
+        if self.input_noise_type == "additive":
+            y_hat = self.model(x + torch.randn_like(x) * self.input_noise_std)
+        elif self.input_noise_type == "multiplicative":
+            y_hat = self.model(x * (1 + torch.randn_like(x) * self.input_noise_std))
         loss = nn.functional.mse_loss(y_hat * self.loss_lambda.to(y.device), y * self.loss_lambda.to(y.device))
         self.log("train_loss", nn.functional.mse_loss(y_hat, y))
 
