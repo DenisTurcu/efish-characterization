@@ -16,6 +16,7 @@ class EndToEndConvNN_PL(L.LightningModule):
         activation: str = "relu",
         input_noise_std: float = 0.5,
         model_type: str = "regular",
+        loss_lambda: torch.Tensor = torch.Tensor([1, 1, 1, 1, 10, 10]),
     ):
         """_summary_
 
@@ -53,14 +54,15 @@ class EndToEndConvNN_PL(L.LightningModule):
             raise ValueError(f"Model type {model_type} not yet supported.")
         self.input_noise_std = input_noise_std
         self.number_outputs = layers_properties[next(reversed(layers_properties))]["out_features"]
+        self.loss_lambda = loss_lambda[: self.number_outputs]
         self.save_hyperparameters()
 
     def training_step(self, batch, batch_idx):
         x, y = batch
         y = y[:, : self.number_outputs]
         y_hat = self.model(x + torch.randn_like(x) * self.input_noise_std)  # train with noise for regularization
-        loss = nn.functional.mse_loss(y_hat, y)
-        self.log("train_loss", loss)
+        loss = nn.functional.mse_loss(y_hat * self.loss_lambda.to(y.device), y * self.loss_lambda.to(y.device))
+        self.log("train_loss", nn.functional.mse_loss(y_hat, y))
 
         # setup for logging non-scalars, such as figures
         if (batch_idx % 100) == 0:
@@ -86,8 +88,8 @@ class EndToEndConvNN_PL(L.LightningModule):
             plt.tight_layout()
             tensorboard.add_figure("filters", fig, global_step=0, close=True)
             # log the training predictions as figure
-            true_vals = y[:200].detach().cpu().numpy()
-            pred_vals = y_hat[:200].detach().cpu().numpy()
+            true_vals = y[:400].detach().cpu().numpy()
+            pred_vals = y_hat[:400].detach().cpu().numpy()
             fig = make_true_vs_predicted_figure(true_vals, pred_vals)
             tensorboard.add_figure("train_predictions", fig, global_step=0, close=True)
             plt.close("all")
@@ -104,7 +106,7 @@ class EndToEndConvNN_PL(L.LightningModule):
         if (batch_idx % 100) == 0 and self.global_step > 0:
             tensorboard = self.logger.experiment  # type: ignore
             # log the training predictions
-            idx = np.random.permutation(y.shape[0])[:200]
+            idx = np.random.permutation(y.shape[0])[:400]
             true_vals = y[idx].detach().cpu().numpy()
             pred_vals = y_hat[idx].detach().cpu().numpy()
             fig = make_true_vs_predicted_figure(true_vals, pred_vals)
@@ -113,6 +115,6 @@ class EndToEndConvNN_PL(L.LightningModule):
         pass
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
-        # optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-2, momentum=0.9, nesterov=True)
+        # optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+        optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-2, momentum=0.9, nesterov=True)
         return optimizer

@@ -95,11 +95,13 @@ def make_true_vs_predicted_figure(
     Returns:
         plt.figure.Figure: Figure object containing the comparison.
     """
+    distance_id = feature_names.index("position_ys")
+    scatter_colors = true_vals[:, distance_id]
     fig, ax = plt.subplots(1, true_vals.shape[-1], figsize=(2 * true_vals.shape[-1], 2))
     for i in range(true_vals.shape[-1]):
         true_vs = true_vals[:, i]
         pred_vs = pred_vals[:, i]
-        ax[i].scatter(true_vs, pred_vs, c="k", s=1, alpha=0.5, marker=".")
+        ax[i].scatter(true_vs, pred_vs, c=scatter_colors, s=1, alpha=0.5, marker=".")
         ax[i].plot([true_vs.min(), true_vs.max()], [true_vs.min(), true_vs.max()], ls="--", c="k", lw=0.5)
         ax[i].set_xlabel("True", fontsize=8)
         if i == 0:
