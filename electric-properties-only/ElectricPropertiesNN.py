@@ -50,8 +50,8 @@ class ElectricPropertiesNN(nn.Module):
         features = torch.vstack(features).T
 
         # compute and apply scale multiplier
-        scale_multiplier_distance = self.compute_scale(distances, self.poly_degree_distance)
-        scale_multiplier_radius = self.compute_scale(radii, self.poly_degree_radius)
+        scale_multiplier_distance = self.compute_scale(distances, self.poly_coeffs_distance, self.poly_degree_distance)
+        scale_multiplier_radius = self.compute_scale(radii, self.poly_coeffs_radius, self.poly_degree_radius)
         features = features * (scale_multiplier_distance * scale_multiplier_radius)[:, np.newaxis]
 
         # run NN model
@@ -59,7 +59,7 @@ class ElectricPropertiesNN(nn.Module):
             return self.sequence(features), features, scale_multiplier_distance, scale_multiplier_radius
         return self.sequence(features)
 
-    def compute_scale(self, variable, poly_coeffs):
-        variable = torch.pow(variable[:, np.newaxis], torch.arange(poly_coeffs + 1).to(variable.device))
+    def compute_scale(self, variable, poly_coeffs, poly_degree):
+        variable = torch.pow(variable[:, np.newaxis], torch.arange(poly_degree + 1).to(variable.device))
         scale_multiplier = F.softplus((poly_coeffs * variable).sum(-1))
         return scale_multiplier
