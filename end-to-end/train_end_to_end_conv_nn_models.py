@@ -113,9 +113,6 @@ if __name__ == "__main__":
     else:
         raise ValueError(f"Model type {args.model_type} not yet supported.")
 
-    dataset = pd.read_pickle(f"{args.data_dir_name}/dataset.pkl")
-    h5py_file = h5py.File(f"{args.data_dir_name}/responses.hdf5", "r")["responses"]
-
     dset = ElectricImagesDataset(data_dir_name=args.data_dir_name, fish_t=args.fish_t, fish_u=args.fish_u)
 
     layers_properties = OrderedDict(

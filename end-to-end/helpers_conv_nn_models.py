@@ -95,8 +95,10 @@ def make_true_vs_predicted_figure(
     Returns:
         plt.figure.Figure: Figure object containing the comparison.
     """
-    distance_id = feature_names.index("position_ys")
-    scatter_colors = true_vals[:, distance_id]
+    scatter_colors = np.zeros(true_vals.shape[0])
+    if "position_ys" in feature_names:
+        distance_id = feature_names.index("position_ys")
+        scatter_colors = true_vals[:, distance_id]
     fig, ax = plt.subplots(1, true_vals.shape[-1], figsize=(2 * true_vals.shape[-1], 2))
     for i in range(true_vals.shape[-1]):
         true_vs = true_vals[:, i]
