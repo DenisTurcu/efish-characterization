@@ -23,7 +23,7 @@ def my_parser():
     parser.add_argument(
         "--data_dir_name",
         type=str,
-        default="./",
+        default="../../efish-physics-model/data/processed/data-2024_06_18-characterization_dataset",
         help="Directory containing the dataset.",
     )
     parser.add_argument(

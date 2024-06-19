@@ -28,13 +28,13 @@ class ElectricPropertiesNN(nn.Module):
 
         self.sequence = nn.Sequential(
             nn.BatchNorm1d(2),
-            nn.Linear(2, 5),
+            nn.Linear(2, 10),
             activation,
-            nn.Linear(5, 10),
+            nn.Linear(10, 20),
             activation,
-            nn.Linear(10, 5),
+            nn.Linear(20, 10),
             activation,
-            nn.Linear(5, 2),
+            nn.Linear(10, 2),
         )
 
     def forward(self, electric_images, distances, radii, return_features_and_multiplier=False):
