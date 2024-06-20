@@ -71,13 +71,18 @@ class EndToEndConvNNWithFeedback_PL(L.LightningModule):
 
         # setup for logging non-scalars, such as figures
         if (batch_idx % 100) == 0:
+            if self.model.use_estimates_as_feedback:
+                distances = y_hat[:, 1]
+                radii = y_hat[:, 3]
+            distances = distances.detach().cpu().numpy()
+            radii = radii.detach().cpu().numpy()
             tensorboard = self.logger.experiment  # type: ignore
             # log the first layer conv filters
-            if "sequence" in next(iter(self.model.state_dict().keys())):
-                filters = self.model.sequence.conv1.conv.weight.detach().cpu().numpy()  # type: ignore
+            if "sequence" in next(iter(self.model.spatial_model.state_dict().keys())):
+                filters = self.model.spatial_model.sequence.conv1.conv.weight.detach().cpu().numpy()  # type: ignore
             else:
-                filters_MZ = self.model.conv_MZ.conv1.conv.weight.detach().cpu().numpy()  # type: ignore
-                filters_DLZ = self.model.conv_DLZ.conv1.conv.weight.detach().cpu().numpy()  # type: ignore
+                filters_MZ = self.model.spatial_model.conv_MZ.conv1.conv.weight.detach().cpu().numpy()  # type: ignore
+                filters_DLZ = self.model.spatial_model.conv_DLZ.conv1.conv.weight.detach().cpu().numpy()  # type: ignore
                 filters = np.concatenate([filters_MZ, filters_DLZ], axis=1)
 
             vval = np.max(np.abs(filters))
@@ -99,8 +104,6 @@ class EndToEndConvNNWithFeedback_PL(L.LightningModule):
             ax3D = fig.add_subplot(131, projection="3d")
             xs = features[:, 0].detach().cpu().numpy()
             ys = features[:, 1].detach().cpu().numpy()
-            distances = distances.detach().cpu().numpy()
-            radii = radii.detach().cpu().numpy()
             ax3D.scatter(
                 xs,
                 ys,
@@ -115,12 +118,14 @@ class EndToEndConvNNWithFeedback_PL(L.LightningModule):
             ax3D.set_zlabel("Distance (normalized)", fontsize=10)  # type: ignore
             # plot the scale function with distance
             ax_dist = fig.add_subplot(132)
-            ax_dist.scatter(distances, scale_multiplier_distance.detach().cpu().numpy(), c=distances, cmap="tab20")
+            ax_dist.scatter(
+                distances, scale_multiplier_distance.detach().cpu().numpy(), c=distances, cmap="tab20", s=2, alpha=0.3
+            )
             ax_dist.set_xlabel("Distances (normalized)", fontsize=10)
             ax_dist.set_ylabel("Scale multiplier", fontsize=12)
             sns.despine(ax=ax_dist, offset=5, trim=True)
             ax_rad = fig.add_subplot(133)
-            ax_rad.scatter(radii, scale_multiplier_radius.detach().cpu().numpy(), c=radii, cmap="tab20")
+            ax_rad.scatter(radii, scale_multiplier_radius.detach().cpu().numpy(), c=radii, cmap="tab20", s=2, alpha=0.3)
             ax_rad.set_xlabel("Radii (normalized)", fontsize=10)
             ax_rad.set_ylabel("Scale multiplier", fontsize=12)
             sns.despine(ax=ax_rad, offset=5, trim=True)
@@ -144,7 +149,7 @@ class EndToEndConvNNWithFeedback_PL(L.LightningModule):
         self.log("val_loss", val_loss)
 
         # setup for logging non-scalars, such as figures
-        if (batch_idx % 100) == 0 and self.global_step > 0:
+        if batch_idx == 0 and self.global_step > 0:
             tensorboard = self.logger.experiment  # type: ignore
             # log the training predictions
             idx = np.random.permutation(y.shape[0])[:400]
@@ -157,5 +162,5 @@ class EndToEndConvNNWithFeedback_PL(L.LightningModule):
 
     def configure_optimizers(self):
         # optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
-        optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-3, momentum=0.9, nesterov=True)
+        optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-2, momentum=0.9, nesterov=True)
         return optimizer
