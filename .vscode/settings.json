@@ -9,6 +9,8 @@
     "python.analysis.extraPaths": [
         "./helper_functions",
         "./objects",
-        "./uniform_points_generation"
+        "./uniform_points_generation",
+        "./end-to-end",
+        "./electric-properties-only"
     ]
 }

@@ -1,4 +1,5 @@
 import numpy as np
+from scipy import spatial
 import torch
 import torch.nn as nn
 import lightning as L
@@ -8,47 +9,51 @@ import sys
 
 sys.path.append("../end-to-end")
 
-from helpers_conv_nn_models import make_true_vs_predicted_figure  # noqa: E402
-from ElectricPropertiesNN import ElectricPropertiesNN  # noqa: E402
+from helpers_conv_nn_models import make_true_vs_predicted_figure
+from EndToEndConvNNWithFeedback import EndToEndConvNNWithFeedback
 
 
-class ElectricPropertiesNN_PL(L.LightningModule):
+class EndToEndConvNNWithFeedback_PL(L.LightningModule):
     def __init__(
         self,
-        kernel_size=7,
-        in_channels=2,
-        poly_degree_distance=4,
-        poly_degree_radius=3,
-        activation: str = "tanh",
-        input_noise_std: float = 0.5,
+        layers_properties: dict,
+        activation_spatial: str = "relu",
+        model_type: str = "regular",
+        # feedback model properties (for extracting electric properties)
+        kernel_size: int = 7,
+        in_channels: int = 2,
+        poly_degree_distance: int = 4,
+        poly_degree_radius: int = 3,
+        activation_feedback: str = "relu",
+        # miscellaneous properties
+        use_estimates_as_feedback: bool = False,
+        input_noise_std: float = 0.25,
         input_noise_type: str = "additive",
+        loss_lambda: torch.Tensor = torch.Tensor([1, 1, 1, 1, 1, 1]),
     ):
-        super(ElectricPropertiesNN_PL, self).__init__()
+        super(EndToEndConvNNWithFeedback_PL, self).__init__()
 
-        if activation.lower() == "relu":
-            model_activation = nn.ReLU()  # type: ignore
-        elif activation.lower() == "tanh":
-            model_activation = nn.Tanh()  # type: ignore
-        else:
-            raise ValueError(f"Activation {activation} not yet supported.")
-        self.model = ElectricPropertiesNN(
+        self.model = EndToEndConvNNWithFeedback(
+            layers_properties=layers_properties,
+            activation_spatial=activation_spatial,
+            model_type=model_type,
             kernel_size=kernel_size,
             in_channels=in_channels,
             poly_degree_distance=poly_degree_distance,
             poly_degree_radius=poly_degree_radius,
-            activation=model_activation,
+            activation_feedback=activation_feedback,
+            use_estimates_as_feedback=use_estimates_as_feedback,
         )
-
-        assert (input_noise_type == "additive") or (input_noise_type == "multiplicative"), "Noise type not supported."
         self.input_noise_type = input_noise_type
         self.input_noise_std = input_noise_std
+        self.number_outputs = layers_properties[next(reversed(layers_properties))]["out_features"]
+        self.loss_lambda = loss_lambda
         self.save_hyperparameters()
 
     def training_step(self, batch, batch_idx):
         x, y = batch
         distances = y[:, 1]  # extract distances
         radii = y[:, 3]  # extract radii
-        y = y[:, 4:]  # keep electric properties only
 
         # train with noise for regularization
         x_noise = torch.randn_like(x) * self.input_noise_std
@@ -60,12 +65,33 @@ class ElectricPropertiesNN_PL(L.LightningModule):
             y_hat, features, scale_multiplier_distance, scale_multiplier_radius = self.model(
                 x * (1 + x_noise), distances, radii, return_features_and_multiplier=True
             )
-        loss = nn.functional.mse_loss(y_hat, y)
+        loss = nn.functional.mse_loss(y_hat * self.loss_lambda.to(y.device), y * self.loss_lambda.to(y.device))
         self.log("train_loss", nn.functional.mse_loss(y_hat, y))
 
         # setup for logging non-scalars, such as figures
         if (batch_idx % 100) == 0:
             tensorboard = self.logger.experiment  # type: ignore
+            # log the first layer conv filters
+            if "sequence" in next(iter(self.model.state_dict().keys())):
+                filters = self.model.sequence.conv1.conv.weight.detach().cpu().numpy()  # type: ignore
+            else:
+                filters_MZ = self.model.conv_MZ.conv1.conv.weight.detach().cpu().numpy()  # type: ignore
+                filters_DLZ = self.model.conv_DLZ.conv1.conv.weight.detach().cpu().numpy()  # type: ignore
+                filters = np.concatenate([filters_MZ, filters_DLZ], axis=1)
+
+            vval = np.max(np.abs(filters))
+            fig, ax = plt.subplots(
+                filters.shape[1], filters.shape[0], figsize=(1.5 * filters.shape[0], 1.5 * filters.shape[1])
+            )
+            for i in range(filters.shape[1]):
+                for j in range(filters.shape[0]):
+                    ax[i, j].imshow(filters[j, i], cmap="seismic", vmin=-vval, vmax=vval)
+                    ax[i, j].set_xticks([])
+                    ax[i, j].set_yticks([])
+                    sns.despine(ax=ax[i, j], left=True, bottom=True)
+            plt.tight_layout()
+            tensorboard.add_figure("filters", fig, global_step=0, close=True)
+
             # log the 3D feature space of MZ responses, DLZ responses, and distance AND the scale function with distance
             fig = plt.figure(figsize=(12, 3))
             # plot the 3D feature space of MZ responses, DLZ responses, and distance
@@ -97,14 +123,13 @@ class ElectricPropertiesNN_PL(L.LightningModule):
             ax_rad.set_xlabel("Radii (normalized)", fontsize=10)
             ax_rad.set_ylabel("Scale multiplier", fontsize=12)
             sns.despine(ax=ax_rad, offset=5, trim=True)
-
             plt.tight_layout()
             tensorboard.add_figure("features-and-scales", fig, global_step=0, close=True)
 
             # log the training predictions as figure
             true_vals = y[:400].detach().cpu().numpy()
             pred_vals = y_hat[:400].detach().cpu().numpy()
-            fig = make_true_vs_predicted_figure(true_vals, pred_vals, feature_names=["resistances", "capacitances"])
+            fig = make_true_vs_predicted_figure(true_vals, pred_vals)
             tensorboard.add_figure("train_predictions", fig, global_step=0, close=True)
             plt.close("all")
         return loss
@@ -113,7 +138,6 @@ class ElectricPropertiesNN_PL(L.LightningModule):
         x, y = batch
         distances = y[:, 1]  # extract distances
         radii = y[:, 3]  # extract radii
-        y = y[:, 4:]  # keep electric properties only
         y_hat = self.model(x, distances, radii)
         val_loss = nn.functional.mse_loss(y_hat, y)
         self.log("val_loss", val_loss)
@@ -125,7 +149,7 @@ class ElectricPropertiesNN_PL(L.LightningModule):
             idx = np.random.permutation(y.shape[0])[:400]
             true_vals = y[idx].detach().cpu().numpy()
             pred_vals = y_hat[idx].detach().cpu().numpy()
-            fig = make_true_vs_predicted_figure(true_vals, pred_vals, feature_names=["resistances", "capacitances"])
+            fig = make_true_vs_predicted_figure(true_vals, pred_vals)
             tensorboard.add_figure("valid_predictions", fig, global_step=0, close=True)
             plt.close("all")
         pass
