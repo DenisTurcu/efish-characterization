@@ -80,7 +80,7 @@ class ElectricPropertiesNN_PL(L.LightningModule):
                 distances,
                 c=distances,
                 cmap="tab20",
-                s=1,
+                s=1,  # type: ignore
                 marker=".",
             )
             ax3D.set_xlabel("MZ mod", fontsize=10)
@@ -132,5 +132,5 @@ class ElectricPropertiesNN_PL(L.LightningModule):
 
     def configure_optimizers(self):
         # optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
-        optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-2, momentum=0.9, nesterov=True)
+        optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-3, momentum=0.9, nesterov=True)
         return optimizer

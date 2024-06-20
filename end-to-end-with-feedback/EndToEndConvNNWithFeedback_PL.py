@@ -1,5 +1,4 @@
 import numpy as np
-from scipy import spatial
 import torch
 import torch.nn as nn
 import lightning as L
@@ -8,14 +7,16 @@ import seaborn as sns
 import sys
 
 sys.path.append("../end-to-end")
+sys.path.append("../electric_properties_only")
 
-from helpers_conv_nn_models import make_true_vs_predicted_figure
-from EndToEndConvNNWithFeedback import EndToEndConvNNWithFeedback
+from helpers_conv_nn_models import make_true_vs_predicted_figure  # noqa: E402
+from EndToEndConvNNWithFeedback import EndToEndConvNNWithFeedback  # noqa: E402
 
 
 class EndToEndConvNNWithFeedback_PL(L.LightningModule):
     def __init__(
         self,
+        # spatial model
         layers_properties: dict,
         activation_spatial: str = "relu",
         model_type: str = "regular",
@@ -106,7 +107,7 @@ class EndToEndConvNNWithFeedback_PL(L.LightningModule):
                 distances,
                 c=distances,
                 cmap="tab20",
-                s=1,
+                s=1,  # type: ignore
                 marker=".",
             )
             ax3D.set_xlabel("MZ mod", fontsize=10)
@@ -156,5 +157,5 @@ class EndToEndConvNNWithFeedback_PL(L.LightningModule):
 
     def configure_optimizers(self):
         # optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
-        optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-2, momentum=0.9, nesterov=True)
+        optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-3, momentum=0.9, nesterov=True)
         return optimizer
