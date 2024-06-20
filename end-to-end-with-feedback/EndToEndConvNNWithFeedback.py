@@ -109,7 +109,7 @@ class EndToEndConvNNWithFeedback(nn.Module):
         ), "Distances and radii must either be provided OR used from spatial model estimates."
         if self.use_estimates_as_feedback:
             distances = spatial_properties[:, 1]
-            radii = spatial_properties[:, 2]
+            radii = spatial_properties[:, 3]
         electric_properties = self.feedback_model(electric_images, distances, radii, return_features_and_multiplier)
         if return_features_and_multiplier:
             return (
