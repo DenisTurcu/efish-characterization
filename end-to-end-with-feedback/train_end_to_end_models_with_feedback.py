@@ -114,7 +114,7 @@ def my_parser():
     )
     parser.add_argument(
         "--use_estimates_as_feedback",
-        type=bool,
+        type=str,
         default=False,
         help="Use the estimates of the electric properties as feedback.",
     )
@@ -123,6 +123,9 @@ def my_parser():
 
 if __name__ == "__main__":
     args = my_parser()
+
+    # parse `use_estimates_as_feedback` as a boolean
+    use_estimates_as_feedback = args.use_estimates_as_feedback.lower() == "true"
 
     if args.model_type == "regular":
         in_ch = 2
@@ -173,7 +176,7 @@ if __name__ == "__main__":
         poly_degree_radius=args.poly_degree_radius,
         activation_feedback=args.activation_feedback,
         # miscellaneous properties
-        use_estimates_as_feedback=args.use_estimates_as_feedback,
+        use_estimates_as_feedback=use_estimates_as_feedback,
         input_noise_std=args.input_noise_std,
         input_noise_type=args.input_noise_type,
     )
