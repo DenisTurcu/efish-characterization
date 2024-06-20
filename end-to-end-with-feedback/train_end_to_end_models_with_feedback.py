@@ -184,7 +184,11 @@ if __name__ == "__main__":
     # dummy forward pass to initialize the model
     dloader = DataLoader(dset, batch_size=4, shuffle=True)
     batch = next(iter(dloader))
-    _ = model_PL.model(batch[0])
+    _ = model_PL.model(
+        batch[0],
+        distances=torch.zeros(batch[0].shape[0]).to(batch[0].device),
+        radii=torch.zeros(batch[0].shape[0]).to(batch[0].device),
+    )
 
     # data loaders
     train_dset, valid_dset = torch.utils.data.random_split(dset, [0.85, 0.15])  # type: ignore
