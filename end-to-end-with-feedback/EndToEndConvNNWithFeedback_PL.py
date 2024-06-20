@@ -7,7 +7,7 @@ import seaborn as sns
 import sys
 
 sys.path.append("../end-to-end")
-sys.path.append("../electric_properties_only")
+sys.path.append("../electric-properties-only")
 
 from helpers_conv_nn_models import make_true_vs_predicted_figure  # noqa: E402
 from EndToEndConvNNWithFeedback import EndToEndConvNNWithFeedback  # noqa: E402

@@ -4,7 +4,7 @@ from collections import OrderedDict
 import sys
 
 sys.path.append("../end-to-end")
-sys.path.append("../electric_properties_only")
+sys.path.append("../electric-properties-only")
 
 from EndToEndConvNN import EndToEndConvNN  # noqa: E402
 from EndToEndConvNN_TwoPaths import EndToEndConvNN2Paths  # noqa: E402

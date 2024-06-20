@@ -10,7 +10,7 @@ sys.path.append("../../efish-physics-model/objects")
 sys.path.append("../../efish-physics-model/helper_functions")
 sys.path.append("../../efish-physics-model/uniform_points_generation")
 sys.path.append("../end-to-end")
-sys.path.append("../electric_properties_only")
+sys.path.append("../electric-properties-only")
 
 from electric_images_dataset import ElectricImagesDataset  # noqa: 402
 from EndToEndConvNNWithFeedback_PL import EndToEndConvNNWithFeedback_PL  # noqa: 402
