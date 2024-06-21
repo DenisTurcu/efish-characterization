@@ -30,7 +30,7 @@ class EndToEndConvNNWithFeedback_PL(L.LightningModule):
         use_estimates_as_feedback: bool = False,
         input_noise_std: float = 0.25,
         input_noise_type: str = "additive",
-        loss_lambda: torch.Tensor = torch.Tensor([1, 1, 1, 1, 1, 1]),
+        loss_lambda: torch.Tensor = torch.Tensor([1, 1, 1, 10, 20, 20]),
     ):
         super(EndToEndConvNNWithFeedback_PL, self).__init__()
 
@@ -161,6 +161,6 @@ class EndToEndConvNNWithFeedback_PL(L.LightningModule):
         pass
 
     def configure_optimizers(self):
-        # optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
-        optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-2, momentum=0.9, nesterov=True)
+        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+        # optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-2, momentum=0.9, nesterov=True)
         return optimizer
