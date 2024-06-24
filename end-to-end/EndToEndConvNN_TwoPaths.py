@@ -67,7 +67,7 @@ class EndToEndConvNN2Paths(nn.Module):
             if "conv" in key:
                 continue
             elif "fc" in key:
-                self.linear[key] = compile_fc_layer(layer, activation)
+                self.linear[key] = compile_fc_layer(copy.copy(layer), activation)
             else:
                 raise ValueError(f'Layer type "{key}" from "layers_properties" is not compatible.')
         self.linear = nn.Sequential(self.linear)

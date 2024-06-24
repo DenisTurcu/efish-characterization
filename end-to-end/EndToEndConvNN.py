@@ -1,3 +1,4 @@
+import copy
 import torch.nn as nn
 from collections import OrderedDict
 from helpers_conv_nn_models import compile_conv_layer, compile_fc_layer
@@ -49,9 +50,9 @@ class EndToEndConvNN(nn.Module):
         self.sequence = OrderedDict()
         for key, layer in layers_properties.items():
             if "conv" in key:
-                self.sequence[key] = compile_conv_layer(layer, activation)
+                self.sequence[key] = compile_conv_layer(copy.copy(layer), activation)
             elif "fc" in key:
-                self.sequence[key] = compile_fc_layer(layer, activation)
+                self.sequence[key] = compile_fc_layer(copy.copy(layer), activation)
             else:
                 raise ValueError(f'Layer type "{key}" from "layers_properties" is not compatible.')
         self.sequence = nn.Sequential(self.sequence)

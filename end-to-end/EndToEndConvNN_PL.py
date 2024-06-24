@@ -1,3 +1,4 @@
+import copy
 import numpy as np
 import torch
 import torch.nn as nn
@@ -43,12 +44,12 @@ class EndToEndConvNN_PL(L.LightningModule):
 
         if model_type == "regular":
             self.model = EndToEndConvNN(
-                layers_properties=layers_properties,  # type: ignore
+                layers_properties=copy.deepcopy(layers_properties),  # type: ignore
                 activation=model_activation,  # type: ignore
             )
         elif model_type == "two_paths":
             self.model = EndToEndConvNN2Paths(
-                layers_properties=layers_properties,  # type: ignore
+                layers_properties=copy.deepcopy(layers_properties),  # type: ignore
                 activation=model_activation,  # type: ignore
             )
         else:

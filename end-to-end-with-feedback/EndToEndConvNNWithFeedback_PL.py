@@ -1,3 +1,4 @@
+import copy
 import numpy as np
 import torch
 import torch.nn as nn
@@ -35,7 +36,7 @@ class EndToEndConvNNWithFeedback_PL(L.LightningModule):
         super(EndToEndConvNNWithFeedback_PL, self).__init__()
 
         self.model = EndToEndConvNNWithFeedback(
-            layers_properties=layers_properties,
+            layers_properties=copy.deepcopy(layers_properties),
             activation_spatial=activation_spatial,
             model_type=model_type,
             kernel_size=kernel_size,
