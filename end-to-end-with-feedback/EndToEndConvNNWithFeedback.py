@@ -1,3 +1,4 @@
+import copy
 import torch
 import torch.nn as nn
 from collections import OrderedDict
@@ -72,12 +73,12 @@ class EndToEndConvNNWithFeedback(nn.Module):
 
         if model_type == "regular":
             self.spatial_model = EndToEndConvNN(
-                layers_properties=layers_properties,  # type: ignore
+                layers_properties=copy.deepcopy(layers_properties),  # type: ignore
                 activation=spatial_activation,  # type: ignore
             )
         elif model_type == "two_paths":
             self.spatial_model = EndToEndConvNN2Paths(
-                layers_properties=layers_properties,  # type: ignore
+                layers_properties=copy.deepcopy(layers_properties),  # type: ignore
                 activation=spatial_activation,  # type: ignore
             )
         else:
