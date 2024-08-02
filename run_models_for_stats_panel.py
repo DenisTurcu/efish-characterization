@@ -18,8 +18,8 @@ from EndToEndConvNN_PL import EndToEndConvNN_PL  # noqa: 402
 from EndToEndConvNNWithFeedback_PL import EndToEndConvNNWithFeedback_PL  # noqa: 402
 
 # seed everything
-gpus = [3]
-random_seed = 113
+gpus = [1]
+random_seed = 11
 L.seed_everything(random_seed)
 
 # HYPERPARAMETERS OF THE RUN
