@@ -26,7 +26,7 @@ L.seed_everything(random_seed)
 rc_lambdas = [0, 1, 2, 4, 8, 16]
 data_dir_name = "../efish-physics-model/data/processed/data-2024_06_18-characterization_dataset"
 batch_size = 5000
-max_epochs = 10
+max_epochs = 5
 input_noise_std = 0.01
 input_noise_type = "additive"
 activation = "relu"
