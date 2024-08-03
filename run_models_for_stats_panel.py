@@ -23,7 +23,10 @@ random_seed = 11
 L.seed_everything(random_seed)
 
 # HYPERPARAMETERS OF THE RUN
-rc_lambdas = [0, 1, 2, 4, 8, 16]
+rc_lambdas = [1, 16]
+number_EODs = [5, 10, 20]
+
+# rc_lambdas = [0, 1, 2, 4, 8, 16]
 data_dir_name = "../efish-physics-model/data/processed/data-2024_06_18-characterization_dataset"
 batch_size = 5000
 max_epochs = 5
@@ -73,102 +76,105 @@ layers_properties_full = copy.deepcopy(layers_properties)
 layers_properties_full["fc3"]["out_features"] = 6
 
 for lambda_rc in rc_lambdas:
-    ####################################################################################
-    ####################################################################################
-    # feedback with VALUES
-    ####################################################################################
-    ####################################################################################
+    for num_eods in number_EODs:
+        # ####################################################################################
+        # ####################################################################################
+        # # feedback with VALUES
+        # ####################################################################################
+        # ####################################################################################
 
-    use_estimates_as_feedback = False
+        # use_estimates_as_feedback = False
 
-    model_PL = EndToEndConvNNWithFeedback_PL(
-        # spatial model properties
-        layers_properties=copy.deepcopy(layers_properties),
-        activation_spatial=activation_spatial,
-        model_type=model_type,
-        # feedback model properties (for extracting electric properties)
-        kernel_size=average_pooling_kernel_size,
-        in_channels=2,
-        poly_degree_distance=poly_degree_distance,
-        poly_degree_radius=poly_degree_radius,
-        activation_feedback=activation_feedback,
-        # miscellaneous properties
-        use_estimates_as_feedback=use_estimates_as_feedback,
-        input_noise_std=input_noise_std,
-        input_noise_type=input_noise_type,
-        loss_lambda=[1, 1, 1, 1, lambda_rc, lambda_rc],
-    )
+        # model_PL = EndToEndConvNNWithFeedback_PL(
+        #     # spatial model properties
+        #     layers_properties=copy.deepcopy(layers_properties),
+        #     activation_spatial=activation_spatial,
+        #     model_type=model_type,
+        #     # feedback model properties (for extracting electric properties)
+        #     kernel_size=average_pooling_kernel_size,
+        #     in_channels=2,
+        #     poly_degree_distance=poly_degree_distance,
+        #     poly_degree_radius=poly_degree_radius,
+        #     activation_feedback=activation_feedback,
+        #     # miscellaneous properties
+        #     use_estimates_as_feedback=use_estimates_as_feedback,
+        #     input_noise_std=input_noise_std,
+        #     input_noise_type=input_noise_type,
+        #     loss_lambda=[1, 1, 1, 1, lambda_rc, lambda_rc],
+        # )
 
-    # dummy forward pass to initialize the model
-    batch = next(iter(dloader))
-    _ = model_PL.model(
-        batch[0],
-        distances=torch.zeros(batch[0].shape[0]).to(batch[0].device),
-        radii=torch.zeros(batch[0].shape[0]).to(batch[0].device),
-    )
+        # # dummy forward pass to initialize the model
+        # batch = next(iter(dloader))
+        # _ = model_PL.model(
+        #     batch[0],
+        #     distances=torch.zeros(batch[0].shape[0]).to(batch[0].device),
+        #     radii=torch.zeros(batch[0].shape[0]).to(batch[0].device),
+        # )
 
-    logger = pl_loggers.TensorBoardLogger(
-        save_dir=f"./stats-panel/feedback-with-values-randseed_{random_seed}-lambdaRC_{lambda_rc}/"
-    )
-    trainer = L.Trainer(max_epochs=max_epochs, logger=logger, devices=gpus)
-    trainer.fit(model=model_PL, train_dataloaders=train_loader, val_dataloaders=valid_loader)
+        # logger = pl_loggers.TensorBoardLogger(
+        #     save_dir=f"./stats-panel/feedback-with-values-randseed_{random_seed}-lambdaRC_{lambda_rc}/"
+        # )
+        # trainer = L.Trainer(max_epochs=max_epochs, logger=logger, devices=gpus)
+        # trainer.fit(model=model_PL, train_dataloaders=train_loader, val_dataloaders=valid_loader)
 
-    ####################################################################################
-    ####################################################################################
-    # full models
-    ####################################################################################
-    ####################################################################################
+        ####################################################################################
+        ####################################################################################
+        # full models
+        ####################################################################################
+        ####################################################################################
 
-    model_PL = EndToEndConvNN_PL(
-        layers_properties=copy.deepcopy(layers_properties_full),
-        activation=activation,
-        input_noise_std=input_noise_std,
-        input_noise_type=input_noise_type,
-        model_type=model_type,
-        loss_lambda=[1, 1, 1, 1, lambda_rc, lambda_rc],
-    )
+        model_PL = EndToEndConvNN_PL(
+            layers_properties=copy.deepcopy(layers_properties_full),
+            activation=activation,
+            input_noise_std=input_noise_std,
+            input_noise_type=input_noise_type,
+            model_type=model_type,
+            loss_lambda=[1, 1, 1, 1, lambda_rc, lambda_rc],
+            number_eods=num_eods,
+        )
 
-    batch = next(iter(dloader))
-    _ = model_PL.model(batch[0])
+        batch = next(iter(dloader))
+        _ = model_PL.model(batch[0])
 
-    logger = pl_loggers.TensorBoardLogger(
-        save_dir=f"./stats-panel/full-model-randseed_{random_seed}-lambdaRC_{lambda_rc}/"
-    )
-    trainer = L.Trainer(max_epochs=max_epochs, logger=logger, devices=gpus)
-    trainer.fit(model=model_PL, train_dataloaders=train_loader, val_dataloaders=valid_loader)
+        logger = pl_loggers.TensorBoardLogger(
+            save_dir=f"./stats-panel-multipleeods/full-model-randseed_{random_seed}-lambdaRC_{lambda_rc}-numeods_{num_eods}/"
+        )
+        trainer = L.Trainer(max_epochs=max_epochs, logger=logger, devices=gpus)
+        trainer.fit(model=model_PL, train_dataloaders=train_loader, val_dataloaders=valid_loader)
 
-    ####################################################################################
-    ####################################################################################
-    # feedback with ESTIMATES
-    ####################################################################################
-    ####################################################################################
+        ####################################################################################
+        ####################################################################################
+        # feedback with ESTIMATES
+        ####################################################################################
+        ####################################################################################
 
-    use_estimates_as_feedback = True
+        use_estimates_as_feedback = True
 
-    model_PL = EndToEndConvNNWithFeedback_PL(
-        # spatial model properties
-        layers_properties=copy.deepcopy(layers_properties),
-        activation_spatial=activation_spatial,
-        model_type=model_type,
-        # feedback model properties (for extracting electric properties)
-        kernel_size=average_pooling_kernel_size,
-        in_channels=2,
-        poly_degree_distance=poly_degree_distance,
-        poly_degree_radius=poly_degree_radius,
-        activation_feedback=activation_feedback,
-        # miscellaneous properties
-        use_estimates_as_feedback=use_estimates_as_feedback,
-        input_noise_std=input_noise_std,
-        input_noise_type=input_noise_type,
-        loss_lambda=[1, 1, 1, 1, lambda_rc, lambda_rc],
-    )
+        model_PL = EndToEndConvNNWithFeedback_PL(
+            # spatial model properties
+            layers_properties=copy.deepcopy(layers_properties),
+            activation_spatial=activation_spatial,
+            model_type=model_type,
+            # feedback model properties (for extracting electric properties)
+            kernel_size=average_pooling_kernel_size,
+            in_channels=2,
+            poly_degree_distance=poly_degree_distance,
+            poly_degree_radius=poly_degree_radius,
+            activation_feedback=activation_feedback,
+            # miscellaneous properties
+            use_estimates_as_feedback=use_estimates_as_feedback,
+            input_noise_std=input_noise_std,
+            input_noise_type=input_noise_type,
+            loss_lambda=[1, 1, 1, 1, lambda_rc, lambda_rc],
+            number_eods=num_eods,
+        )
 
-    # dummy forward pass to initialize the model
-    batch = next(iter(dloader))
-    _ = model_PL.model(batch[0])
+        # dummy forward pass to initialize the model
+        batch = next(iter(dloader))
+        _ = model_PL.model(batch[0])
 
-    logger = pl_loggers.TensorBoardLogger(
-        save_dir=f"./stats-panel/feedback-with-estimates-randseed_{random_seed}-lambdaRC_{lambda_rc}/"
-    )
-    trainer = L.Trainer(max_epochs=max_epochs, logger=logger, devices=gpus)
-    trainer.fit(model=model_PL, train_dataloaders=train_loader, val_dataloaders=valid_loader)
+        logger = pl_loggers.TensorBoardLogger(
+            save_dir=f"./stats-panel-manyeods/feedback-with-estimates-randseed_{random_seed}-lambdaRC_{lambda_rc}-numeods_{num_eods}/"
+        )
+        trainer = L.Trainer(max_epochs=max_epochs, logger=logger, devices=gpus)
+        trainer.fit(model=model_PL, train_dataloaders=train_loader, val_dataloaders=valid_loader)

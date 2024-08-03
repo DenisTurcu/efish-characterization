@@ -19,6 +19,7 @@ class EndToEndConvNN_PL(L.LightningModule):
         input_noise_type: str = "additive",
         model_type: str = "regular",
         loss_lambda: list = [1, 1, 1, 1, 10, 10],
+        number_eods: int = 1,
     ):
         """_summary_
 
@@ -59,16 +60,29 @@ class EndToEndConvNN_PL(L.LightningModule):
         self.input_noise_std = input_noise_std
         self.number_outputs = layers_properties[next(reversed(layers_properties))]["out_features"]
         self.loss_lambda = torch.Tensor(loss_lambda[: self.number_outputs])
+        self.number_eods = number_eods
         self.save_hyperparameters()
+
+    def forward_multiple_eods(self, x):
+        # repeat the input for the number of EODs
+        x_repeated = x.repeat([self.number_eods] + [1] * (x.dim() - 1))
+        # train with noise for regularization
+        x_repeated_noise = torch.randn_like(x_repeated) * self.input_noise_std
+        if self.input_noise_type == "additive":
+            y_hat = self.model(x_repeated + x_repeated_noise)
+        elif self.input_noise_type == "multiplicative":
+            y_hat = self.model(x_repeated * (1 + x_repeated_noise))
+        y_hat = y_hat.reshape(
+            self.number_eods,
+            x.shape[0],
+            self.number_outputs,
+        )
+        return y_hat.mean(0)
 
     def training_step(self, batch, batch_idx):
         x, y = batch
         y = y[:, : self.number_outputs]
-        # train with noise for regularization
-        if self.input_noise_type == "additive":
-            y_hat = self.model(x + torch.randn_like(x) * self.input_noise_std)
-        elif self.input_noise_type == "multiplicative":
-            y_hat = self.model(x * (1 + torch.randn_like(x) * self.input_noise_std))
+        y_hat = self.forward_multiple_eods(x)
         loss = nn.functional.mse_loss(y_hat * self.loss_lambda.to(y.device), y * self.loss_lambda.to(y.device))
         self.log("train_loss", nn.functional.mse_loss(y_hat, y))
 

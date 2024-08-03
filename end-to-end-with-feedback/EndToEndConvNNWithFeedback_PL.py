@@ -32,6 +32,7 @@ class EndToEndConvNNWithFeedback_PL(L.LightningModule):
         input_noise_std: float = 0.25,
         input_noise_type: str = "additive",
         loss_lambda: list = [1, 2, 1, 4, 8, 8],
+        number_eods: int = 1,
     ):
         super(EndToEndConvNNWithFeedback_PL, self).__init__()
 
@@ -50,23 +51,46 @@ class EndToEndConvNNWithFeedback_PL(L.LightningModule):
         self.input_noise_std = input_noise_std
         self.number_outputs = layers_properties[next(reversed(layers_properties))]["out_features"]
         self.loss_lambda = torch.Tensor(loss_lambda)
+        self.number_eods = number_eods
         self.save_hyperparameters()
+
+    def forward_multiple_eods(self, electric_images, distances=None, radii=None, return_features_and_multiplier=False):
+        electric_images_repeated = electric_images.repeat([self.number_eods] + [1] * (electric_images.dim() - 1))
+
+        electric_images_repeated_noise = torch.randn_like(electric_images_repeated) * self.input_noise_std
+        if self.input_noise_type == "additive":
+            spatial_properties = self.model.spatial_model(electric_images_repeated + electric_images_repeated_noise)
+        elif self.input_noise_type == "multiplicative":
+            spatial_properties = self.model.spatial_model(
+                electric_images_repeated * (1 + electric_images_repeated_noise)
+            )
+        spatial_properties = spatial_properties.reshape(
+            self.number_eods,
+            electric_images.shape[0],
+            self.number_outputs,
+        )
+        assert self.use_estimates_as_feedback or (
+            distances is not None and radii is not None
+        ), "Distances and radii must either be provided OR used from spatial model estimates."
+        if self.use_estimates_as_feedback:
+            distances = spatial_properties[:, 1]
+            radii = spatial_properties[:, 3]
+
+        electric_properties = self.feedback_model(electric_images, distances, radii, return_features_and_multiplier)
+        if return_features_and_multiplier:
+            return (
+                torch.cat([spatial_properties, electric_properties[0]], dim=1),
+                electric_properties[1],  # features
+                electric_properties[2],  # scale multiplier distance
+                electric_properties[3],  # scale multiplier radius
+            )
+        return torch.cat([spatial_properties, electric_properties], dim=1)
 
     def training_step(self, batch, batch_idx):
         x, y = batch
         distances = y[:, 1]  # extract distances
         radii = y[:, 3]  # extract radii
-
-        # train with noise for regularization
-        x_noise = torch.randn_like(x) * self.input_noise_std
-        if self.input_noise_type == "additive":
-            y_hat, features, scale_multiplier_distance, scale_multiplier_radius = self.model(
-                x + x_noise, distances, radii, return_features_and_multiplier=True
-            )
-        elif self.input_noise_type == "multiplicative":
-            y_hat, features, scale_multiplier_distance, scale_multiplier_radius = self.model(
-                x * (1 + x_noise), distances, radii, return_features_and_multiplier=True
-            )
+        y_hat = self.forward_multiple_eods(x, distances, radii, return_features_and_multiplier=True)
         loss = nn.functional.mse_loss(y_hat * self.loss_lambda.to(y.device), y * self.loss_lambda.to(y.device))
         self.log("train_loss", nn.functional.mse_loss(y_hat, y))
 
