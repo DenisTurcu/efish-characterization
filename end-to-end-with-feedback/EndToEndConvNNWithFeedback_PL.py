@@ -68,15 +68,17 @@ class EndToEndConvNNWithFeedback_PL(L.LightningModule):
             self.number_eods,
             electric_images.shape[0],
             self.number_outputs,
-        )
-        assert self.use_estimates_as_feedback or (
+        ).mean(0)
+        assert self.model.use_estimates_as_feedback or (
             distances is not None and radii is not None
         ), "Distances and radii must either be provided OR used from spatial model estimates."
-        if self.use_estimates_as_feedback:
+        if self.model.use_estimates_as_feedback:
             distances = spatial_properties[:, 1]
             radii = spatial_properties[:, 3]
 
-        electric_properties = self.feedback_model(electric_images, distances, radii, return_features_and_multiplier)
+        electric_properties = self.model.feedback_model(
+            electric_images, distances, radii, return_features_and_multiplier
+        )
         if return_features_and_multiplier:
             return (
                 torch.cat([spatial_properties, electric_properties[0]], dim=1),
@@ -90,7 +92,9 @@ class EndToEndConvNNWithFeedback_PL(L.LightningModule):
         x, y = batch
         distances = y[:, 1]  # extract distances
         radii = y[:, 3]  # extract radii
-        y_hat = self.forward_multiple_eods(x, distances, radii, return_features_and_multiplier=True)
+        y_hat, features, scale_multiplier_distance, scale_multiplier_radius = self.forward_multiple_eods(
+            x, distances, radii, return_features_and_multiplier=True
+        )
         loss = nn.functional.mse_loss(y_hat * self.loss_lambda.to(y.device), y * self.loss_lambda.to(y.device))
         self.log("train_loss", nn.functional.mse_loss(y_hat, y))
 
