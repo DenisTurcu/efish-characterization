@@ -6,12 +6,12 @@ from collections import OrderedDict
 import sys
 import copy
 
-sys.path.append("../efish-physics-model/objects")
-sys.path.append("../efish-physics-model/helper_functions")
-sys.path.append("../efish-physics-model/uniform_points_generation")
-sys.path.append("./end-to-end")
-sys.path.append("./end-to-end-with-feedback")
-sys.path.append("./electric-properties-only")
+sys.path.append("../../efish-physics-model/objects")
+sys.path.append("../../efish-physics-model/helper_functions")
+sys.path.append("../../efish-physics-model/uniform_points_generation")
+sys.path.append("../end-to-end")
+sys.path.append("../end-to-end-with-feedback")
+sys.path.append("../electric-properties-only")
 
 from electric_images_dataset import ElectricImagesDataset  # noqa: 402
 from EndToEndConvNN_PL import EndToEndConvNN_PL  # noqa: 402
@@ -27,7 +27,7 @@ rc_lambdas = [1, 16]
 number_EODs = [5, 10, 20]
 
 # rc_lambdas = [0, 1, 2, 4, 8, 16]
-data_dir_name = "../efish-physics-model/data/processed/data-2024_06_18-characterization_dataset"
+data_dir_name = "../../efish-physics-model/data/processed/data-2024_06_18-characterization_dataset"
 batch_size = 5000
 max_epochs = 2
 input_noise_std = 0.01
