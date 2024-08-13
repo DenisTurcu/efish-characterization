@@ -8,6 +8,7 @@ class ElectricPropertiesModelsDataset(Dataset):
     def __init__(
         self,
         data_dir_name="./",
+        file_name="electric_properties_data.pkl",
     ):
         """Initialize the LFP response dataset.
 
@@ -16,7 +17,7 @@ class ElectricPropertiesModelsDataset(Dataset):
         """
         super(ElectricPropertiesModelsDataset, self).__init__()
         self.data_dir_name = data_dir_name
-        self.modulations, self.worms_properties = dill.load(open(f"{data_dir_name}/electric_properties_data.pkl", "rb"))
+        self.modulations, self.worms_properties = dill.load(open(f"{data_dir_name}/{file_name}", "rb"))
 
     def __len__(self):
         return self.modulations.shape[0]  # type: ignore

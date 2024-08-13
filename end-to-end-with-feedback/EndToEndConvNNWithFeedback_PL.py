@@ -73,8 +73,10 @@ class EndToEndConvNNWithFeedback_PL(L.LightningModule):
             distances is not None and radii is not None
         ), "Distances and radii must either be provided OR used from spatial model estimates."
         if self.model.use_estimates_as_feedback:
-            distances = spatial_properties[:, 1]
-            radii = spatial_properties[:, 3]
+            # distances = spatial_properties[:, 1]
+            # radii = spatial_properties[:, 3]
+            distances = torch.zeros_like(spatial_properties[:, 1])
+            radii = torch.zeros_like(spatial_properties[:, 3])
 
         electric_properties = self.model.feedback_model(
             electric_images, distances, radii, return_features_and_multiplier
