@@ -57,7 +57,7 @@ class ElectricImagesDataset(Dataset):
             for k in worms_properties:
                 worms_properties_stats[k] = {
                     "mean": worms_properties[k].mean(),
-                    "std": worms_properties[k].std(),
+                    "std": worms_properties[k].std() + 1e-15,
                 }
                 worms_properties[k] = (
                     worms_properties[k] - worms_properties_stats[k]["mean"]
