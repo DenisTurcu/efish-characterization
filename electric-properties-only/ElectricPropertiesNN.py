@@ -51,10 +51,10 @@ class ElectricPropertiesNN(nn.Module):
         features = torch.vstack(features).T
 
         # compute and apply scale multiplier
-        # scale_multiplier_distance = self.compute_scale(distances, self.poly_coeffs_distance, self.poly_degree_distance)
-        # scale_multiplier_radius = self.compute_scale(radii, self.poly_coeffs_radius, self.poly_degree_radius)
-        scale_multiplier_distance = torch.ones_like(distances)
-        scale_multiplier_radius = torch.ones_like(radii)
+        scale_multiplier_distance = self.compute_scale(distances, self.poly_coeffs_distance, self.poly_degree_distance)
+        scale_multiplier_radius = self.compute_scale(radii, self.poly_coeffs_radius, self.poly_degree_radius)
+        # scale_multiplier_distance = torch.ones_like(distances)
+        # scale_multiplier_radius = torch.ones_like(radii)
         features = features * (scale_multiplier_distance * scale_multiplier_radius)[:, np.newaxis]
 
         # run NN model
