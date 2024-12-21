@@ -119,6 +119,8 @@ models = models[models["lambda_RC"] > 0].reset_index(drop=True)
 eis = next(iter(dloader))[0]
 props = next(iter(dloader))[1].to(torch.float32)
 discrimination_data = raw_dataset["worms"]["dataframe"].copy()
+n_repeats = 100
+noise_amount = 0.1
 
 
 def train_capacitance_discrimination(
