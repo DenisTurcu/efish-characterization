@@ -104,10 +104,11 @@ class EndToEndConvNNWithFeedback(nn.Module):
         self.use_estimates_as_feedback = use_estimates_as_feedback
 
     def forward(self, electric_images, distances=None, radii=None, return_features_and_multiplier=False):
-        spatial_properties = self.spatial_model(electric_images)
+        spatial_properties = self.spatial_model(electric_images)[:, :4]
         assert self.use_estimates_as_feedback or (
             distances is not None and radii is not None
         ), "Distances and radii must either be provided OR used from spatial model estimates."
+        # if self.use_estimates_as_feedback and (distances is None or radii is None):
         if self.use_estimates_as_feedback:
             distances = spatial_properties[:, 1]
             radii = spatial_properties[:, 3]
