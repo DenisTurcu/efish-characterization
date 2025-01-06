@@ -64,7 +64,8 @@ for folder in list(np.sort(glob.glob("../figures/stats-panel/full-model*"))):
 
 
 checkpoint_path = (
-    f"../electric-properties-only/retrain_scale/lightning_logs/version_6/checkpoints/epoch=999-step=35000.ckpt"
+    f"../electric-properties-only/retrain_scale/lightning_logs/version_4/checkpoints/epoch=599-step=21000.ckpt"
+    # f"../electric-properties-only/retrain_scale/lightning_logs/version_6/checkpoints/epoch=999-step=35000.ckpt"
 )
 retrained_scale_model = ElectricPropertiesNN_PL.load_from_checkpoint(checkpoint_path)
 retrained_scale_model.eval()
